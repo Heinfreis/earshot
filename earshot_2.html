@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Earshot — Portuguese to English</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#12181f;
+    --ink-2:#1b232c;
+    --paper:#edeae3;
+    --paper-dim:#a9a89f;
+    --teal:#4fb6a6;
+    --coral:#e8896b;
+    --line:rgba(237,234,227,0.12);
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--ink);
+    color:var(--paper);
+    font-family:'IBM Plex Sans', sans-serif;
+    display:flex;
+    justify-content:center;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{
+    width:100%;
+    max-width:480px;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    padding:20px 20px calc(24px + env(safe-area-inset-bottom));
+  }
+  header{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    padding:8px 2px 14px;
+  }
+  .wordmark{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    font-size:22px;
+    letter-spacing:-0.02em;
+  }
+  .wordmark span{color:var(--teal);}
+  .status-pill{
+    font-size:12px;
+    color:var(--paper-dim);
+    border:1px solid var(--line);
+    padding:5px 10px;
+    border-radius:999px;
+  }
+  .diag{
+    font-size:10.5px;
+    color:var(--paper-dim);
+    padding:0 2px 16px;
+    font-family:monospace;
+    word-break:break-all;
+  }
+  .banner{
+    display:none;
+    background:rgba(232,137,107,0.12);
+    border:1px solid rgba(232,137,107,0.4);
+    color:var(--paper);
+    border-radius:10px;
+    padding:12px 14px;
+    font-size:13px;
+    line-height:1.5;
+    margin-bottom:16px;
+  }
+  .banner.show{display:block;}
+  .banner b{color:var(--coral);}
+  .lang-row{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    margin-bottom:22px;
+    padding:12px 14px;
+    background:var(--ink-2);
+    border:1px solid var(--line);
+    border-radius:10px;
+    font-family:'Space Grotesk', sans-serif;
+    font-size:14px;
+  }
+  .lang-row .from{color:var(--coral);}
+  .lang-row .to{color:var(--teal);}
+  .lang-row .arrow{color:var(--paper-dim);}
+  .stage{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:26px;
+    padding:10px 0 30px;
+  }
+  .ring-wrap{position:relative; width:180px; height:180px; display:flex; align-items:center; justify-content:center;}
+  .ring{
+    position:absolute; inset:0;
+    border-radius:50%;
+    border:1.5px solid var(--line);
+  }
+  .ring.pulse{
+    animation:pulse 1.8s ease-out infinite;
+    border-color:var(--teal);
+    opacity:0;
+  }
+  .ring.pulse.paused{animation-play-state:paused; opacity:0;}
+  @keyframes pulse{
+    0%{ transform:scale(0.72); opacity:0.55; }
+    100%{ transform:scale(1.15); opacity:0; }
+  }
+  .mic-btn{
+    width:112px;
+    height:112px;
+    border-radius:50%;
+    border:none;
+    background:var(--teal);
+    color:var(--ink);
+    font-size:15px;
+    font-weight:600;
+    font-family:'Space Grotesk', sans-serif;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 8px 30px rgba(79,182,166,0.25);
+    transition:background 0.2s, transform 0.15s;
+  }
+  .mic-btn:active{transform:scale(0.96);}
+  .mic-btn.listening{
+    background:var(--coral);
+    box-shadow:0 8px 30px rgba(232,137,107,0.28);
+  }
+  .mic-btn.busy{
+    background:var(--ink-2);
+    color:var(--paper-dim);
+    border:1px solid var(--line);
+  }
+  .hint{
+    font-size:13px;
+    color:var(--paper-dim);
+    text-align:center;
+    max-width:280px;
+    line-height:1.5;
+  }
+  .panels{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .panel{
+    background:var(--ink-2);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:16px 18px;
+    min-height:64px;
+  }
+  .panel-label{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:11px;
+    color:var(--paper-dim);
+    margin-bottom:6px;
+  }
+  .panel.target{border-color:rgba(232,137,107,0.35);}
+  .panel-text{
+    font-size:16px;
+    line-height:1.5;
+  }
+  .panel.target .panel-text{
+    font-size:19px;
+    font-weight:500;
+  }
+  .placeholder{color:var(--paper-dim);}
+  footer{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding-top:16px;
+    font-size:11px;
+    color:var(--paper-dim);
+  }
+  .voice-toggle{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    cursor:pointer;
+    user-select:none;
+  }
+  .switch{
+    width:34px; height:20px;
+    border-radius:999px;
+    background:var(--ink-2);
+    border:1px solid var(--line);
+    position:relative;
+    transition:background 0.2s;
+  }
+  .switch::after{
+    content:'';
+    position:absolute;
+    top:2px; left:2px;
+    width:14px; height:14px;
+    border-radius:50%;
+    background:var(--paper-dim);
+    transition:transform 0.2s, background 0.2s;
+  }
+  .switch.on{background:rgba(79,182,166,0.25); border-color:var(--teal);}
+  .switch.on::after{transform:translateX(14px); background:var(--teal);}
+  .err{
+    font-size:12px;
+    color:var(--coral);
+    text-align:center;
+    min-height:16px;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="wordmark">ear<span>shot</span></div>
+    <div class="status-pill" id="statusPill">idle</div>
+  </header>
+  <div class="diag" id="diag"></div>
+
+  <div class="banner" id="insecureBanner">
+    <b>This page can't reach the microphone here.</b> It's been opened as a local file, and Chrome blocks mic and network access for pages not served over a real https:// address. Host this file online (see the chat for options) and open the https link instead — that will fix it without changing anything else.
+  </div>
+
+  <div class="lang-row">
+    <span class="from">Português (Portugal)</span>
+    <span class="arrow">→</span>
+    <span class="to">English</span>
+  </div>
+
+  <div class="stage">
+    <div class="ring-wrap">
+      <div class="ring pulse paused" id="pulse1"></div>
+      <div class="ring pulse paused" id="pulse2" style="animation-delay:0.9s"></div>
+      <button class="mic-btn" id="micBtn">Listen</button>
+    </div>
+    <p class="hint" id="hint">Pop in your earbuds, tap Listen, then allow microphone access when Android asks.</p>
+    <p class="err" id="errBox"></p>
+  </div>
+
+  <div class="panels">
+    <div class="panel">
+      <div class="panel-label">HEARD (PT-PT)</div>
+      <div class="panel-text placeholder" id="sourceText">Nothing yet — waiting for speech</div>
+    </div>
+    <div class="panel target">
+      <div class="panel-label">ENGLISH</div>
+      <div class="panel-text placeholder" id="targetText">Translation appears here</div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="voice-toggle" id="voiceToggle">
+      <div class="switch on" id="voiceSwitch"></div>
+      <span>Speak translation aloud</span>
+    </div>
+    <span id="apiTag">MyMemory</span>
+  </footer>
+</div>
+
+<script>
+const SOURCE_LANG = 'pt-PT';      // speech recognition locale
+const TARGET_LANG = 'en-GB';      // text-to-speech locale
+const TRANSLATE_PAIR = 'pt-PT|en-GB';
+
+const micBtn = document.getElementById('micBtn');
+const statusPill = document.getElementById('statusPill');
+const sourceText = document.getElementById('sourceText');
+const targetText = document.getElementById('targetText');
+const errBox = document.getElementById('errBox');
+const hint = document.getElementById('hint');
+const voiceSwitch = document.getElementById('voiceSwitch');
+const diag = document.getElementById('diag');
+const insecureBanner = document.getElementById('insecureBanner');
+const pulse1 = document.getElementById('pulse1');
+const pulse2 = document.getElementById('pulse2');
+
+let voiceOn = true;
+document.getElementById('voiceToggle').onclick = () => {
+  voiceOn = !voiceOn;
+  voiceSwitch.classList.toggle('on', voiceOn);
+};
+
+// --- Diagnostics: show exactly what origin/support we have, so failures aren't silent ---
+const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+const hasMediaDevices = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+const secure = window.isSecureContext === true;
+
+diag.textContent = `origin: ${location.protocol}//${location.host || '(none)'} · secure: ${secure} · speech-api: ${!!SpeechRecognitionCtor} · mic-api: ${hasMediaDevices}`;
+
+if(!secure || !hasMediaDevices){
+  insecureBanner.classList.add('show');
+}
+
+let recognition = null;
+let listening = false;
+let restarting = false;
+let micStream = null;
+
+function setStatus(text){ statusPill.textContent = text; }
+
+function showError(msg, persist){
+  errBox.textContent = msg;
+  if(!persist) setTimeout(()=>{ if(errBox.textContent===msg) errBox.textContent=''; }, 6000);
+}
+
+function setBusy(isBusy){
+  micBtn.disabled = isBusy;
+  micBtn.classList.toggle('busy', isBusy);
+}
+
+async function translate(text){
+  const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${TRANSLATE_PAIR}`;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error('translate-failed');
+  const data = await res.json();
+  return data?.responseData?.translatedText || '';
+}
+
+function speak(text){
+  if(!voiceOn || !text) return;
+  try{
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = TARGET_LANG;
+    const voices = window.speechSynthesis.getVoices();
+    const match = voices.find(v => v.lang.toLowerCase().startsWith('en'));
+    if(match) utter.voice = match;
+    window.speechSynthesis.speak(utter);
+  }catch(e){ /* non-fatal */ }
+}
+
+// Explicitly request the mic first, so Android shows a real permission dialog
+// and we get a real, visible error instead of silence if something's wrong.
+async function ensureMicPermission(){
+  if(!hasMediaDevices){
+    throw new Error('no-media-api');
+  }
+  setStatus('requesting mic…');
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  // We only needed this to trigger/confirm the permission prompt;
+  // SpeechRecognition manages its own capture, so release this stream.
+  stream.getTracks().forEach(t => t.stop());
+  return true;
+}
+
+function beginRecognition(){
+  recognition = new SpeechRecognitionCtor();
+  recognition.lang = SOURCE_LANG;
+  recognition.continuous = true;
+  recognition.interimResults = true;
+
+  recognition.onstart = () => {
+    setStatus('listening');
+    pulse1.classList.remove('paused');
+    pulse2.classList.remove('paused');
+  };
+
+  recognition.onresult = async (event) => {
+    let finalChunk = '';
+    let interim = '';
+    for(let i = event.resultIndex; i < event.results.length; i++){
+      const res = event.results[i];
+      if(res.isFinal) finalChunk += res[0].transcript;
+      else interim += res[0].transcript;
+    }
+    if(interim){
+      sourceText.textContent = interim;
+      sourceText.classList.remove('placeholder');
+    }
+    if(finalChunk.trim()){
+      sourceText.textContent = finalChunk.trim();
+      sourceText.classList.remove('placeholder');
+      setStatus('translating');
+      try{
+        const translated = await translate(finalChunk.trim());
+        targetText.textContent = translated;
+        targetText.classList.remove('placeholder');
+        speak(translated);
+      }catch(e){
+        showError("Translation hiccup — will retry on the next phrase.");
+      }
+      if(listening) setStatus('listening');
+    }
+  };
+
+  recognition.onerror = (event) => {
+    if(event.error === 'no-speech') return;
+    if(event.error === 'not-allowed' || event.error === 'service-not-allowed'){
+      showError("Microphone permission was denied. Allow it in Chrome's site settings and try again.", true);
+      stopListening();
+      return;
+    }
+    if(event.error === 'network'){
+      showError("Speech service unreachable — check your internet connection.", true);
+      stopListening();
+      return;
+    }
+    showError("Recognition error: " + event.error);
+  };
+
+  recognition.onend = () => {
+    if(listening && !restarting){
+      restarting = true;
+      setTimeout(() => {
+        restarting = false;
+        if(listening){
+          try{ recognition.start(); }
+          catch(e){ showError("Couldn't restart listening: " + e.message, true); stopListening(); }
+        }
+      }, 250);
+    }
+  };
+
+  try{
+    recognition.start();
+  }catch(e){
+    showError("Couldn't start listening: " + e.message, true);
+    stopListening();
+  }
+}
+
+async function startListening(){
+  errBox.textContent = '';
+
+  if(!secure || !hasMediaDevices){
+    showError("Blocked: this page isn't on a secure https:// address, so Chrome won't allow mic access.", true);
+    return;
+  }
+  if(!SpeechRecognitionCtor){
+    showError("This version of Chrome doesn't expose speech recognition.", true);
+    return;
+  }
+
+  setBusy(true);
+  try{
+    await ensureMicPermission();
+  }catch(e){
+    setBusy(false);
+    if(e.name === 'NotAllowedError' || e.message === 'no-media-api'){
+      showError("Microphone permission was denied or unavailable.", true);
+    }else if(e.name === 'NotFoundError'){
+      showError("No microphone was found on this device.", true);
+    }else{
+      showError("Mic request failed: " + (e.message || e.name || 'unknown error'), true);
+    }
+    return;
+  }
+  setBusy(false);
+
+  listening = true;
+  micBtn.textContent = 'Stop';
+  micBtn.classList.add('listening');
+  hint.textContent = "Listening — the English will play through your earbuds a beat after each phrase.";
+  beginRecognition();
+}
+
+function stopListening(){
+  listening = false;
+  if(recognition){ try{ recognition.stop(); }catch(e){} }
+  micBtn.textContent = 'Listen';
+  micBtn.classList.remove('listening');
+  pulse1.classList.add('paused');
+  pulse2.classList.add('paused');
+  setStatus('idle');
+  hint.textContent = "Pop in your earbuds, tap Listen, then allow microphone access when Android asks.";
+}
+
+micBtn.onclick = () => {
+  if(listening) stopListening();
+  else startListening();
+};
+
+if(!SpeechRecognitionCtor){
+  micBtn.disabled = true;
+  micBtn.style.opacity = 0.5;
+}
+</script>
+</body>
+</html>
