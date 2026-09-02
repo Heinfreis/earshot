@@ -106,6 +106,7 @@
     position:absolute; inset:0;
     border-radius:50%;
     border:1.5px solid var(--line);
+    pointer-events:none;
   }
   .ring.pulse{
     animation:pulse 1.8s ease-out infinite;
@@ -118,6 +119,8 @@
     100%{ transform:scale(1.15); opacity:0; }
   }
   .mic-btn{
+    position:relative;
+    z-index:2;
     width:112px;
     height:112px;
     border-radius:50%;
